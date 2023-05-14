@@ -37,7 +37,7 @@ export class PlutusData {
   private _bytes: Uint8Array | undefined = undefined;
   private _constr: ConstrPlutusData | undefined = undefined;
   private _kind: PlutusDataKind = PlutusDataKind.ConstrPlutusData;
-  // private _originalBytes: Uint8Array | undefined = undefined;
+  private _originalBytes: Uint8Array | undefined = undefined;
 
   /**
    * Serializes this PlutusData instance into its CBOR representation as a Uint8Array.
@@ -46,7 +46,7 @@ export class PlutusData {
    */
   // eslint-disable-next-line complexity
   toBytes(): Uint8Array {
-    // if (this._originalBytes) return this._originalBytes;
+    if (this._originalBytes) return this._originalBytes;
 
     let bytes: Uint8Array;
 
@@ -181,6 +181,8 @@ export class PlutusData {
         throw new Error('Invalid Plutus Data');
       }
     }
+
+    data._originalBytes = cbor;
 
     return data;
   }
