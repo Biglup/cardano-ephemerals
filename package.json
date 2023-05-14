@@ -33,7 +33,8 @@
     "cleanup": "run-s cleanup:dist cleanup:nm",
     "lint": "eslint -c ./complete.eslintrc.js \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint:fix": "yarn lint --fix",
-    "prepack": "yarn build"
+    "prepack": "yarn build",
+    "test": "jest -c ./jest.config.js"
   },
   "devDependencies": {
     "@atixlabs/eslint-config": "^1.2.3",

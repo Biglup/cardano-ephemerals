@@ -37,7 +37,7 @@ export class PlutusData {
   private _bytes: Uint8Array | undefined = undefined;
   private _constr: ConstrPlutusData | undefined = undefined;
   private _kind: PlutusDataKind = PlutusDataKind.ConstrPlutusData;
-  private _originalBytes: Uint8Array | undefined = undefined;
+  // private _originalBytes: Uint8Array | undefined = undefined;
 
   /**
    * Serializes this PlutusData instance into its CBOR representation as a Uint8Array.
@@ -46,7 +46,7 @@ export class PlutusData {
    */
   // eslint-disable-next-line complexity
   toBytes(): Uint8Array {
-    if (this._originalBytes) return this._originalBytes;
+    // if (this._originalBytes) return this._originalBytes;
 
     let bytes: Uint8Array;
 
@@ -63,31 +63,10 @@ export class PlutusData {
         bytes = this._list!.toBytes();
         break;
       }
-      // Note [The 64-byte limit]
-      //
-      // We impose a 64-byte *on-the-wire* limit on the leaves of a serialized 'PlutusData'.
-      //
-      // The simplest way of doing this is to check during deserialization that we never deserialize something that uses
-      // more than 64-bytes, and this is largely what we do. Then it's the user's problem to not produce something too big.
-      //
-      // But this is quite inconvenient.
-      //
-      // Implementing the 64-byte limit naively would be quite annoying:
-      //
-      // - Users would be responsible for not creating PlutusData values with leaves that were too big.
-      // - If a script *required* such a thing (e.g. a counter that somehow got above 64 bytes), then the user is totally
-      // stuck: the script demands something they cannot represent.
-      //
-      // This is unpleasant and introduces limits. Probably limits that nobody will hit, but it's nicer to just not have them.
-      // And it turns out that we can evade the problem with some clever encoding.
-      //
-      // The fundamental argument is that an *indefinite-length* CBOR bytestring is just as obfuscated as a list of bytestrings,
-      // since it consists of a list of chunks *with metadata*. Since we already allow people to make lists of <64 byte bytestrings,
-      // we might as well let them make indefinite-length bytestrings too.
-      //
-      // So that solves the problem for bytestrings: if they are >64bytes, we encode them as indefinite-length bytestrings
-      // with 64-byte chunks. We have to write our own encoders/decoders so we can produce chunks of the right size and check
-      // the sizes when we decode, but that's okay.
+      // Note [The 64-byte limit]: See https://github.com/input-output-hk/plutus/blob/1f31e640e8a258185db01fa899da63f9018c0e85/plutus-core/plutus-core/src/PlutusCore/Data.hs#L61-L105
+      // If the bytestring is >64bytes, we encode it as indefinite-length bytestrings with 64-byte chunks. We have to write
+      // our own encoders/decoders so we can produce chunks of the right size and check
+      // the sizes when we decode.
       case PlutusDataKind.Bytes: {
         const writer = new CborWriter();
 
@@ -104,13 +83,12 @@ export class PlutusData {
           writer.writeEndArray();
         }
 
-        bytes = this._constr!.toBytes();
+        bytes = writer.encode();
         break;
       }
       // For integers, we have two cases. Small integers (<64bits) can be encoded normally. Big integers are already
-      // encoded *with a byte string*. The spec allows this to be an indefinite-length bytestring, so we can reuse our
-      // trick. Again, we need to write some manual encoders/decoders.
-      // See https://github.com/input-output-hk/plutus/blob/1f31e640e8a258185db01fa899da63f9018c0e85/plutus-core/plutus-core/src/PlutusCore/Data.hs#L61-L105
+      // encoded *with a byte string*. The spec allows this to be an indefinite-length bytestring. Again, we need to
+      // write some manual encoders/decoders.
       case PlutusDataKind.Integer: {
         const writer = new CborWriter();
         // If it fits in a Word64, then it's less than 64 bits for sure, and we can just send it off
@@ -183,6 +161,7 @@ export class PlutusData {
         data._kind = PlutusDataKind.Integer;
         break;
       }
+      case CborReaderState.StartIndefiniteLengthByteString:
       case CborReaderState.ByteString: {
         data._bytes = reader.readByteString();
         data._kind = PlutusDataKind.Bytes;

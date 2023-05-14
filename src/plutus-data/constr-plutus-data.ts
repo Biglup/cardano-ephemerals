@@ -60,7 +60,7 @@ export class ConstrPlutusData {
 
     writer.writeTag(Number(compactTag));
 
-    if (compactTag === GENERAL_FORM_TAG) {
+    if (compactTag !== GENERAL_FORM_TAG) {
       writer.writeEncodedValue(this._data.toBytes());
     } else {
       writer.writeStartArray(2);

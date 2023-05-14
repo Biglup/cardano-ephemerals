@@ -23,7 +23,7 @@ import { PlutusData } from './';
  */
 export class PlutusList {
   private readonly _array = new Array<PlutusData>();
-  private _useIndefiniteEncoding = false;
+  private _useIndefiniteEncoding = true;
 
   /**
    * Serializes this PlutusList instance into its CBOR representation as a Uint8Array.
